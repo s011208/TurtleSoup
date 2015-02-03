@@ -9,8 +9,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 
 /**
  * Created by yenhsunhuang on 15/2/3.
@@ -49,11 +51,11 @@ public class StoryList extends ThemeChangeFragment {
 
         @Override
         public int getCount() {
-            return itemsInPage > 0 ? mTotalItems / itemsInPage : 0;
+            return mItemsInPage > 0 ? mTotalItems / mItemsInPage : 0;
         }
 
         @Override
-        public boolean isViewFromObject(View view, Object o) {
+        public boolean isViewFromObject(View view, Object obj) {
             return view == (View) obj;
         }
 
@@ -64,46 +66,81 @@ public class StoryList extends ThemeChangeFragment {
             return itemView;
         }
 
+        @Override
+        public void destroyItem(ViewGroup container, int position, Object object) {
+            container.removeView((View) object);
+        }
+
         private View initView(final int position) {
             final LayoutInflater inflater = mInflater.get();
-            if (inflater == null) {
+            final Context context = mContext.get();
+            if (inflater == null || context == null) {
                 throw new RuntimeException("lost Layout Inflater");
             }
             ListView storyList = (ListView) inflater.inflate(R.layout.story_pager_content, null);
             if (storyList == null) {
                 throw new RuntimeException("wrong story pager content");
             }
-
+            storyList.setAdapter(new StoryListAdapter(context, inflater, position * mItemsInPage, (position + 1) * mItemsInPage));
             return storyList;
         }
 
         private class StoryListAdapter extends BaseAdapter {
             private final Context mContext;
             private final LayoutInflater mInflater;
+            private final int mStartIndex;
+            private final int mOffset;
 
-            public StoryListAdapter(Context context, LayoutInflater inflater) {
+            private final ArrayList<Story> mStories = new ArrayList<Story>();
+
+            public StoryListAdapter(Context context, LayoutInflater inflater, final int startIndex, final int offset) {
                 mContext = context;
                 mInflater = inflater;
+                mStartIndex = startIndex;
+                mOffset = offset;
+                initStories();
+            }
+
+            private void initStories() {
+                for (int i = 0; i < mOffset - mStartIndex; i++) {
+                    mStories.add(new Story("a", "b", "c", "d"));
+                }
             }
 
             @Override
             public int getCount() {
-                return 0;
+                return mStories.size();
             }
 
             @Override
-            public Object getItem(int position) {
-                return null;
+            public Story getItem(int position) {
+                return mStories.get(position);
             }
 
             @Override
             public long getItemId(int position) {
-                return 0;
+                return position;
             }
 
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
-                return null;
+                ViewHolder holder = null;
+                if (convertView == null) {
+                    convertView = mInflater.inflate(R.layout.story_list_content, null);
+                    holder = new ViewHolder();
+                    holder.mTitle = (TextView) convertView.findViewById(R.id.title);
+                    holder.mSummary = (TextView) convertView.findViewById(R.id.summary);
+                    convertView.setTag(holder);
+                } else {
+                    holder = (ViewHolder) convertView.getTag();
+                }
+                holder.mTitle.setText(getItem(position).getTitle());
+                holder.mSummary.setText(getItem(position).getSummary());
+                return convertView;
+            }
+
+            private class ViewHolder {
+                TextView mTitle, mSummary;
             }
         }
     }
