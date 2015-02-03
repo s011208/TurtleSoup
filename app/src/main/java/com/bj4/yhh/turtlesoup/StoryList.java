@@ -21,7 +21,6 @@ public class StoryList extends ThemeChangeFragment {
 
     @Override
     public void onThemeChanged(int theme) {
-
     }
 
     @Override
@@ -33,7 +32,8 @@ public class StoryList extends ThemeChangeFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View parent = inflater.inflate(R.layout.story_list_fragmnet, null);
         final ViewPager storyPager = (ViewPager) parent.findViewById(R.id.story_pager);
-        storyPager.setAdapter(new StoryPagerAdapter(getActivity(), 10));
+        final int itemPerPage = getActivity().getResources().getInteger(R.integer.items_paer_page);
+        storyPager.setAdapter(new StoryPagerAdapter(getActivity(), itemPerPage));
         return parent;
     }
 
