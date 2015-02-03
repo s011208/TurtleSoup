@@ -5,4 +5,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
 
+    <string name="turtle_soup">海龜湯</string>
+    <string name="settings">設定</string>
+    <string name="instructions">說明</string>
 </resources>
