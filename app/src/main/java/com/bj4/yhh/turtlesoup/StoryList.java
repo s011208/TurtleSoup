@@ -22,7 +22,6 @@ public class StoryList extends ThemeChangeFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.firstfragment, container, false);
-        return v;
+        return null;
     }
 }
