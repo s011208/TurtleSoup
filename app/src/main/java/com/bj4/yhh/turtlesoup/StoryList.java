@@ -1,5 +1,6 @@
 package com.bj4.yhh.turtlesoup;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
@@ -7,6 +8,7 @@ import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -39,13 +41,15 @@ public class StoryList extends ThemeChangeFragment {
 
     private static class StoryPagerAdapter extends PagerAdapter {
         private final WeakReference<Context> mContext;
+        private final WeakReference<Activity> mActivity;
         private final WeakReference<LayoutInflater> mInflater;
         private final int mItemsInPage;
         private final int mTotalItems = 100;
 
-        public StoryPagerAdapter(Context context, final int itemsInPage) {
-            mContext = new WeakReference<Context>(context);
-            mInflater = new WeakReference<LayoutInflater>((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE));
+        public StoryPagerAdapter(Activity activity, final int itemsInPage) {
+            mActivity = new WeakReference<Activity>(activity);
+            mContext = new WeakReference<Context>(activity);
+            mInflater = new WeakReference<LayoutInflater>((LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE));
             mItemsInPage = itemsInPage;
         }
 
@@ -81,7 +85,16 @@ public class StoryList extends ThemeChangeFragment {
             if (storyList == null) {
                 throw new RuntimeException("wrong story pager content");
             }
-            storyList.setAdapter(new StoryListAdapter(context, inflater, position * mItemsInPage, (position + 1) * mItemsInPage));
+            final StoryListAdapter adapter = new StoryListAdapter(context, inflater, position * mItemsInPage, (position + 1) * mItemsInPage);
+            storyList.setAdapter(adapter);
+            storyList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    final Story story = adapter.getItem(position);
+                    StoryContentDialog dialog = StoryContentDialog.getNewInstance(mContext.get(), story);
+                    dialog.show(mActivity.get().getFragmentManager(), StoryContentDialog.TAG);
+                }
+            });
             return storyList;
         }
 
@@ -103,7 +116,7 @@ public class StoryList extends ThemeChangeFragment {
 
             private void initStories() {
                 for (int i = 0; i < mOffset - mStartIndex; i++) {
-                    mStories.add(new Story("a", "b", "c", "d"));
+                    mStories.add(new Story("a", "b", "c", "d", false, (int)(Math.random() * 1000)));
                 }
             }
 
