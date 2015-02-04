@@ -2,6 +2,8 @@ package com.bj4.yhh.turtlesoup;
 
 import android.app.Activity;
 import android.app.FragmentTransaction;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 
 
@@ -17,6 +19,14 @@ public class MainActivity extends Activity {
         FragmentTransaction transaction = this.getFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, new EntryFragment());
         transaction.commitAllowingStateLoss();
+        startParseTurtleSoupTask(this);
+    }
+
+    public static void startParseTurtleSoupTask(Context context) {
+        Intent parse = new Intent(context, ParseStoryService.class);
+        parse.setAction(ParseStoryService.INTENT_START_PARSE);
+        parse.putExtra(ParseStoryService.INTENT_EXTRAS_TURTLESOUP, "");
+        context.startService(parse);
     }
 
     @Override

@@ -5,6 +5,14 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Created by Yen-Hsun_Huang on 2015/2/3.
@@ -23,7 +31,7 @@ public class ParseStoryService extends Service {
             if (INTENT_START_PARSE.equals(action)) {
                 final Bundle extras = intent.getExtras();
                 if (extras != null) {
-                    if(extras.getString(INTENT_EXTRAS_TURTLESOUP) != null) {
+                    if (extras.getString(INTENT_EXTRAS_TURTLESOUP) != null) {
                         // parse turtle soup
                         new TurtleSoupParser().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                     }
@@ -37,6 +45,19 @@ public class ParseStoryService extends Service {
 
         @Override
         protected Void doInBackground(Void... params) {
+            int index = 1;
+            while (true) {
+                try {
+                    final URL url = new URL("http://gameschool.cc/puzzle/category/24/?o=date&p=" + Integer.valueOf(index++));
+                    Document xmlDoc = Jsoup.parse(url, 5000);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                    break;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    break;
+                }
+            }
             return null;
         }
     }

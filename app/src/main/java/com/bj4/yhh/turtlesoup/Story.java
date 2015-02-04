@@ -9,6 +9,7 @@ public class Story {
     private String mContent;
     private String mAnswer;
     private boolean mHasRead;
+    private int mIndex = -1;
 
     public Story(String title, String summary, String content, String answer) {
         setTitle(title);
@@ -21,6 +22,19 @@ public class Story {
     public Story(String title, String summary, String content, String answer, boolean hasRead) {
         this(title, summary, content, answer);
         setRead(hasRead);
+    }
+
+    public Story(String title, String summary, String content, String answer, boolean hasRead, int index) {
+        this(title, summary, content, answer, hasRead);
+        setIndex(index);
+    }
+
+    public int getIndex() {
+        return mIndex;
+    }
+
+    public void setIndex(int index) {
+        mIndex = index;
     }
 
     public void setRead(boolean read) {
