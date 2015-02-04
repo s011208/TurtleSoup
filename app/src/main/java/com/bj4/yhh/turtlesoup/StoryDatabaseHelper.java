@@ -5,6 +5,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteFullException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
@@ -24,6 +26,7 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
     private static final int DATABASE_VERSION = 1;
     private static StoryDatabaseHelper sInstance;
     private Context mContext;
+    private SQLiteDatabase mDatabase;
 
     public static synchronized StoryDatabaseHelper getInstnace(Context context) {
         if (sInstance == null) {
@@ -33,8 +36,9 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
     }
 
     private StoryDatabaseHelper(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        super(context.getApplicationContext(), DATABASE_NAME, null, DATABASE_VERSION);
         mContext = context.getApplicationContext();
+        createTablesIfNeeded();
     }
 
     // table story
@@ -51,7 +55,7 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
 
     private void createTablesIfNeeded() {
         // table story
-        getWritableDatabase().execSQL("CREATE TABLE if not exists " + TABLE_STORY
+        getDatabase().execSQL("CREATE TABLE if not exists " + TABLE_STORY
                 + " (" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + COLUMN_HAS_READ + " INTEGER DEFAULT " + RESULT_NOT_READ + ", "
                 + COLUMN_TOPIC_INDEX + " INTEGER DEFAULT -1, "
@@ -59,9 +63,29 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_SUMMARY + " TEXT NOT NULL, "
                 + COLUMN_ANSWER + " TEXT NOT NULL, "
                 + COLUMN_CONTENT + " TEXT NOT NULL)");
+//        getDatabase().execSQL("delete from " + TABLE_STORY);TABLE_STORY
+        if(SharedPreferenceHelper.getInstance(mContext).hasLoadedDb() == false) {
+            // XXX load from raw.txt
+        }
     }
 
-    private static String convertFromStoriesIntoJson(Context context, final String filePath, ArrayList<Story> stories) {
+    private synchronized SQLiteDatabase getDatabase() {
+        if ((mDatabase == null) || (mDatabase != null && mDatabase.isOpen() == false)) {
+            try {
+                mDatabase = getWritableDatabase();
+                Log.d("QQQQ", "mDatabase == null: " + (mDatabase == null));
+            } catch (SQLiteFullException e) {
+                Log.w(TAG, "SQLiteFullException", e);
+            } catch (SQLiteException e) {
+                Log.w(TAG, "SQLiteException", e);
+            } catch (Exception e) {
+                Log.w(TAG, "Exception", e);
+            }
+        }
+        return mDatabase;
+    }
+
+    public static String convertFromStoriesIntoJson(Context context, final String filePath, ArrayList<Story> stories) {
         if (stories.isEmpty())
             return "";
         JSONArray jArray = new JSONArray();
@@ -119,25 +143,24 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
         for (Story story : stories) {
             values.add(convertFromStoryIntoContentValues(story));
         }
-        final SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
+        getDatabase().beginTransaction();
         try {
             for (ContentValues cv : values) {
-                long newID = db.insertOrThrow(TABLE_STORY, null, cv);
+                long newID = getDatabase().insertOrThrow(TABLE_STORY, null, cv);
                 if (newID <= 0) {
                     throw new SQLException("Failed to insert row");
                 }
             }
-            db.setTransactionSuccessful();
-            return values.size();
+            getDatabase().setTransactionSuccessful();
         } finally {
-            db.endTransaction();
+            getDatabase().endTransaction();
         }
+        return values.size();
     }
 
     public ArrayList<Story> queryStories(final int start, final int offset) {
         final ArrayList<Story> rtn = new ArrayList<Story>();
-        final SQLiteDatabase db = getWritableDatabase();
+        final SQLiteDatabase db = getDatabase();
         Cursor data = db.rawQuery("select * from " + TABLE_STORY + " ", null);
         if (data != null) {
             try {
@@ -164,7 +187,6 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        createTablesIfNeeded();
     }
 
     @Override

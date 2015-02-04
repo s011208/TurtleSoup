@@ -1,18 +1,23 @@
 package com.bj4.yhh.turtlesoup;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 
 /**
  * Created by Yen-Hsun_Huang on 2015/2/3.
@@ -33,7 +38,7 @@ public class ParseStoryService extends Service {
                 if (extras != null) {
                     if (extras.getString(INTENT_EXTRAS_TURTLESOUP) != null) {
                         // parse turtle soup
-                        new TurtleSoupParser().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        new TurtleSoupParser(this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                     }
                 }
             }
@@ -42,14 +47,38 @@ public class ParseStoryService extends Service {
     }
 
     private static class TurtleSoupParser extends AsyncTask<Void, Void, Void> {
-
+        private final Context mContext;
+        public TurtleSoupParser(Context context) {
+            mContext = context;
+        }
         @Override
         protected Void doInBackground(Void... params) {
+            ArrayList<Story> stories = new ArrayList<Story>();
             int index = 1;
-            while (true) {
+            while (index < 200) {
                 try {
-                    final URL url = new URL("http://gameschool.cc/puzzle/category/24/?o=date&p=" + Integer.valueOf(index++));
-                    Document xmlDoc = Jsoup.parse(url, 5000);
+                    final String questionsListUrl = "http://gameschool.cc/puzzle/category/24/?o=date&p=" + Integer.valueOf(index++);
+                    final URL url = new URL(questionsListUrl);
+                    Document questionsListDoc = Jsoup.parse(url, 5000);
+                    Elements questionsUrl = questionsListDoc.select("div[class=puz_list]").select("a[href*=puzzle]");
+                    for (Element ele : questionsUrl) {
+                        final String questionLink = "http://gameschool.cc" + ele.select("a").first().attr("href");
+                        try {
+                            final URL questionUrl = new URL(questionLink);
+                            Document questionDoc = Jsoup.parse(questionUrl, 5000);
+                            Elements whiteStage = questionDoc.select("div[class=whitestage puz_full]");
+                            final String title = whiteStage.select("h2").first().ownText();
+                            final String content = whiteStage.select("div[class=puz_Q]").first().ownText();
+                            final String summary = content.substring(0, 30 >= content.length() ? content.length() : 30);
+                            final String answer = whiteStage.select("div[class=puz_A_content]").first().ownText();
+                            final boolean hasRead = false;
+                            final int questionIndex = Integer.valueOf(ele.select("a").first().attr("href").replace("/", "").replace("puzzle", ""));
+                            stories.add(new Story(title, summary, content, answer, hasRead, questionIndex));
+                        } catch (Exception e) {
+                            Log.w("QQQQ", "failed", e);
+                        }
+                    }
+                    Log.d("QQQQ", "CURRENT INDEX: " + index);
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                     break;
@@ -58,6 +87,9 @@ public class ParseStoryService extends Service {
                     break;
                 }
             }
+//            final StoryDatabaseHelper helper = StoryDatabaseHelper.getInstnace(mContext.getApplicationContext());
+//            helper.bulkInsert(stories);
+//            StoryDatabaseHelper.convertFromStoriesIntoJson(mContext, Environment.getExternalStorageDirectory() + "/raw.txt", stories);
             return null;
         }
     }

@@ -21,6 +21,8 @@ import java.util.ArrayList;
  */
 public class StoryList extends ThemeChangeFragment {
 
+    private ViewPager mStoryPager;
+
     @Override
     public void onThemeChanged(int theme) {
     }
@@ -32,11 +34,19 @@ public class StoryList extends ThemeChangeFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        final int previousIndex = SharedPreferenceHelper.getInstance(getActivity()).getPreviousIndex();
         final View parent = inflater.inflate(R.layout.story_list_fragmnet, null);
-        final ViewPager storyPager = (ViewPager) parent.findViewById(R.id.story_pager);
+        mStoryPager = (ViewPager) parent.findViewById(R.id.story_pager);
         final int itemPerPage = getActivity().getResources().getInteger(R.integer.items_paer_page);
-        storyPager.setAdapter(new StoryPagerAdapter(getActivity(), itemPerPage));
+        mStoryPager.setAdapter(new StoryPagerAdapter(getActivity(), itemPerPage));
+        mStoryPager.setCurrentItem(previousIndex);
         return parent;
+    }
+
+    @Override
+    public void onPause(){
+        super.onPause();
+        SharedPreferenceHelper.getInstance(getActivity()).setPreviousIndex(mStoryPager.getCurrentItem());
     }
 
     private static class StoryPagerAdapter extends PagerAdapter {
@@ -115,9 +125,7 @@ public class StoryList extends ThemeChangeFragment {
             }
 
             private void initStories() {
-                for (int i = 0; i < mOffset - mStartIndex; i++) {
-                    mStories.add(new Story("a", "b", "c", "d", false, (int)(Math.random() * 1000)));
-                }
+                mStories.addAll(StoryDatabaseHelper.getInstnace(mContext).queryStories(0, 0));
             }
 
             @Override
