@@ -4,4 +4,7 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
 
     <integer name="items_paer_page">10</integer>
+
+    <dimen name="entry_text_size">30sp</dimen>
+    <dimen name="entry_text_padding">16dp</dimen>
 </resources>

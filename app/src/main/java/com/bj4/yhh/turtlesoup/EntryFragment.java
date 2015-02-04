@@ -30,14 +30,15 @@ public class EntryFragment extends ThemeChangeFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final ListView parent = (ListView) inflater.inflate(R.layout.entry_fragment, null);
-        parent.setAdapter(new EntryListAdapter(getActivity()));
-        parent.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+        final View parent = inflater.inflate(R.layout.entry_fragment, null);
+        final ListView entryList = (ListView) parent.findViewById(R.id.entry_list);
+        entryList.setAdapter(new EntryListAdapter(getActivity()));
+        entryList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                switch(position){
+                switch (position) {
                     case 0:
-                        ((MainActivity)getActivity()).switchToStoryFragment();
+                        ((MainActivity) getActivity()).switchToStoryFragment();
                         break;
                     case 1:
                         break;
