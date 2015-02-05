@@ -1,7 +1,10 @@
 package com.bj4.yhh.turtlesoup;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -21,7 +24,15 @@ import java.util.ArrayList;
  */
 public class StoryList extends ThemeChangeFragment {
 
+    public static final String REQUEST_TO_UPDATE_STORIES = "request_to_update_stories";
+
     private ViewPager mStoryPager;
+
+    private int mCurrentIndex;
+
+    private int mItemPerPage = 10;
+
+    public static final ArrayList<Story> sStories = new ArrayList<Story>();
 
     @Override
     public void onThemeChanged(int theme) {
@@ -30,23 +41,59 @@ public class StoryList extends ThemeChangeFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        sStories.clear();
+        sStories.addAll(StoryDatabaseHelper.getInstnace(getActivity()).queryStories());
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final int previousIndex = SharedPreferenceHelper.getInstance(getActivity()).getPreviousIndex();
+        mCurrentIndex = SharedPreferenceHelper.getInstance(getActivity()).getPreviousIndex();
         final View parent = inflater.inflate(R.layout.story_list_fragmnet, null);
         mStoryPager = (ViewPager) parent.findViewById(R.id.story_pager);
-        final int itemPerPage = getActivity().getResources().getInteger(R.integer.items_paer_page);
-        mStoryPager.setAdapter(new StoryPagerAdapter(getActivity(), itemPerPage));
-        mStoryPager.setCurrentItem(previousIndex);
+        mStoryPager.setAdapter(new StoryPagerAdapter(getActivity(), mItemPerPage));
+        mStoryPager.setCurrentItem(mCurrentIndex);
+        mStoryPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int i, float v, int i2) {
+
+            }
+
+            @Override
+            public void onPageSelected(int i) {
+                mCurrentIndex = i;
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int i) {
+
+            }
+        });
         return parent;
     }
 
+    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            sStories.clear();
+            sStories.addAll(StoryDatabaseHelper.getInstnace(context).queryStories());
+            mStoryPager.setAdapter(new StoryPagerAdapter(getActivity(), mItemPerPage));
+            mStoryPager.setCurrentItem(mCurrentIndex);
+        }
+    };
+
     @Override
-    public void onPause(){
+    public void onResume() {
+        super.onResume();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(REQUEST_TO_UPDATE_STORIES);
+        getActivity().registerReceiver(mReceiver, filter);
+    }
+
+    @Override
+    public void onPause() {
         super.onPause();
         SharedPreferenceHelper.getInstance(getActivity()).setPreviousIndex(mStoryPager.getCurrentItem());
+        getActivity().unregisterReceiver(mReceiver);
     }
 
     private static class StoryPagerAdapter extends PagerAdapter {
@@ -54,13 +101,14 @@ public class StoryList extends ThemeChangeFragment {
         private final WeakReference<Activity> mActivity;
         private final WeakReference<LayoutInflater> mInflater;
         private final int mItemsInPage;
-        private final int mTotalItems = 100;
+        private final int mTotalItems;
 
         public StoryPagerAdapter(Activity activity, final int itemsInPage) {
             mActivity = new WeakReference<Activity>(activity);
             mContext = new WeakReference<Context>(activity);
             mInflater = new WeakReference<LayoutInflater>((LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE));
             mItemsInPage = itemsInPage;
+            mTotalItems = StoryDatabaseHelper.getInstnace(activity).getStoryCount();
         }
 
         @Override
@@ -125,7 +173,7 @@ public class StoryList extends ThemeChangeFragment {
             }
 
             private void initStories() {
-                mStories.addAll(StoryDatabaseHelper.getInstnace(mContext).queryStories(0, 0));
+                mStories.addAll(sStories.subList(mStartIndex, mOffset >= sStories.size() ? sStories.size() - 1 : mOffset));
             }
 
             @Override

@@ -14,6 +14,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 
 /**
@@ -25,6 +26,7 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "stories.db";
     private static final int DATABASE_VERSION = 1;
     private static StoryDatabaseHelper sInstance;
+    private static boolean sIsLoading = false;
     private Context mContext;
     private SQLiteDatabase mDatabase;
 
@@ -63,9 +65,21 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_SUMMARY + " TEXT NOT NULL, "
                 + COLUMN_ANSWER + " TEXT NOT NULL, "
                 + COLUMN_CONTENT + " TEXT NOT NULL)");
-//        getDatabase().execSQL("delete from " + TABLE_STORY);TABLE_STORY
-        if(SharedPreferenceHelper.getInstance(mContext).hasLoadedDb() == false) {
-            // XXX load from raw.txt
+        synchronized (StoryDatabaseHelper.this) {
+            if (SharedPreferenceHelper.getInstance(mContext).hasLoadedDb() == false || sIsLoading == false) {
+                // XXX load from raw.txt
+                sIsLoading = true;
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronized (StoryDatabaseHelper.this) {
+                            readFromJsonToDb(mContext);
+                            sIsLoading = false;
+                            SharedPreferenceHelper.getInstance(mContext).setLoaded();
+                        }
+                    }
+                }).start();
+            }
         }
     }
 
@@ -83,6 +97,49 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
             }
         }
         return mDatabase;
+    }
+
+    public int getStoryCount() {
+        Cursor c = getDatabase().rawQuery("select count(*) from " + TABLE_STORY, null);
+        if (c != null) {
+            try {
+                c.moveToNext();
+                return c.getInt(0);
+            } finally {
+                c.close();
+            }
+        }
+        return 0;
+    }
+
+    private static void readFromJsonToDb(Context context) {
+        try {
+            InputStream is = context.getResources().openRawResource(R.raw.raw);
+            byte[] b = new byte[is.available()];
+            is.read(b);
+            final String data = new String(b);
+            final ArrayList<Story> stories = new ArrayList<Story>();
+            JSONArray jArray = new JSONArray(data);
+            for (int i = 0; i < jArray.length(); i++) {
+                try {
+                    JSONObject jObject = jArray.getJSONObject(i);
+                    stories.add(new Story(
+                            jObject.getString(COLUMN_TITLE),
+                            jObject.getString(COLUMN_SUMMARY),
+                            jObject.getString(COLUMN_CONTENT),
+                            jObject.getString(COLUMN_ANSWER),
+                            jObject.getInt(COLUMN_HAS_READ) == RESULT_READ,
+                            jObject.getInt(COLUMN_TOPIC_INDEX)
+                    ));
+                } catch (Exception e) {
+                    Log.w("QQQQ", "failed", e);
+                }
+            }
+            getInstnace(context).bulkInsert(stories);
+            is.close();
+        } catch (Exception e) {
+            Log.w("QQQQ", "failed", e);
+        }
     }
 
     public static String convertFromStoriesIntoJson(Context context, final String filePath, ArrayList<Story> stories) {
@@ -158,10 +215,10 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
         return values.size();
     }
 
-    public ArrayList<Story> queryStories(final int start, final int offset) {
+    public ArrayList<Story> queryStories() {
         final ArrayList<Story> rtn = new ArrayList<Story>();
         final SQLiteDatabase db = getDatabase();
-        Cursor data = db.rawQuery("select * from " + TABLE_STORY + " ", null);
+        Cursor data = db.rawQuery("select * from " + TABLE_STORY, null);
         if (data != null) {
             try {
                 final int titleIndex = data.getColumnIndex(COLUMN_TITLE);

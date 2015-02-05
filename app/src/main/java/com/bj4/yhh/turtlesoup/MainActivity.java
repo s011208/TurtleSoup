@@ -25,9 +25,6 @@ public class MainActivity extends Activity {
         } else if (FRAGMENT_STATUS_ENTRY == FRAGMENT_STATUS_STORY_LIST) {
             switchToStoryFragment();
         }
-        FragmentTransaction transaction = this.getFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, new EntryFragment());
-        transaction.commitAllowingStateLoss();
 //        startParseTurtleSoupTask(this);
     }
 
