@@ -5,6 +5,8 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
 
 /**
  * Created by Yen-Hsun_Huang on 2015/2/4.
@@ -26,5 +28,13 @@ public class StoryContentDialog extends DialogFragment {
         final Story story = (Story) getArguments().getParcelable(EXTRAS_STORY);
         return new AlertDialog.Builder(getActivity()).setTitle(story.getTitle()).setMessage(story.getSummary() + "\n" + story.getContent() + "\n" + story.getAnswer()
                 + "\n" + story.getIndex() + "\n" + story.hasRead()).create();
+    }
+
+    private View initCustomContent(LayoutInflater inflater, Context context) {
+        return null;
+    }
+
+    private View initCustomTitle(LayoutInflater inflater, Context context) {
+        return null;
     }
 }

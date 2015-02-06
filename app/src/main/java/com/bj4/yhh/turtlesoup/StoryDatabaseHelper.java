@@ -66,7 +66,7 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_ANSWER + " TEXT NOT NULL, "
                 + COLUMN_CONTENT + " TEXT NOT NULL)");
         synchronized (StoryDatabaseHelper.this) {
-            if (SharedPreferenceHelper.getInstance(mContext).hasLoadedDb() == false || sIsLoading == false) {
+            if (SharedPreferenceHelper.getInstance(mContext).hasLoadedDb() == false && sIsLoading == false) {
                 // XXX load from raw.txt
                 sIsLoading = true;
                 new Thread(new Runnable() {
@@ -218,7 +218,7 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
     public ArrayList<Story> queryStories() {
         final ArrayList<Story> rtn = new ArrayList<Story>();
         final SQLiteDatabase db = getDatabase();
-        Cursor data = db.rawQuery("select * from " + TABLE_STORY, null);
+        Cursor data = db.rawQuery("select * from " + TABLE_STORY + " order by " + COLUMN_TOPIC_INDEX, null);
         if (data != null) {
             try {
                 final int titleIndex = data.getColumnIndex(COLUMN_TITLE);
@@ -240,6 +240,13 @@ public class StoryDatabaseHelper extends SQLiteOpenHelper {
             }
         }
         return rtn;
+    }
+
+    public void setRead(Story story) {
+        if (story == null || story.getIndex() == -1)
+            return;
+        ContentValues cv = convertFromStoryIntoContentValues(story);
+        getDatabase().update(TABLE_STORY, cv, COLUMN_TOPIC_INDEX + "=" + story.getIndex(), null);
     }
 
     @Override

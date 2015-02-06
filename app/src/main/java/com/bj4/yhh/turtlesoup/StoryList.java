@@ -5,7 +5,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
@@ -13,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -41,43 +44,65 @@ public class StoryList extends ThemeChangeFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        sStories.clear();
-        sStories.addAll(StoryDatabaseHelper.getInstnace(getActivity()).queryStories());
+        reloadStoriesAsync();
+    }
+
+    private void reloadStoriesAsync() {
+        new AsyncTask<Void, Void, Void>() {
+            private final ArrayList<Story> mStories = new ArrayList<Story>();
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                mStories.addAll(StoryDatabaseHelper.getInstnace(getActivity()).queryStories());
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                sStories.clear();
+                sStories.addAll(mStories);
+                if (mStoryPager != null) {
+                    mStoryPager.setAdapter(new StoryPagerAdapter(getActivity(), mItemPerPage));
+                    mStoryPager.setCurrentItem(mCurrentIndex);
+                }
+            }
+        }.execute();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        mItemPerPage = getActivity().getResources().getInteger(R.integer.items_paer_page);
         mCurrentIndex = SharedPreferenceHelper.getInstance(getActivity()).getPreviousIndex();
         final View parent = inflater.inflate(R.layout.story_list_fragmnet, null);
         mStoryPager = (ViewPager) parent.findViewById(R.id.story_pager);
-        mStoryPager.setAdapter(new StoryPagerAdapter(getActivity(), mItemPerPage));
-        mStoryPager.setCurrentItem(mCurrentIndex);
-        mStoryPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int i, float v, int i2) {
+        if (sStories.isEmpty() == false) {
+            mStoryPager.setAdapter(new StoryPagerAdapter(getActivity(), mItemPerPage));
+            mStoryPager.setCurrentItem(mCurrentIndex);
+            mStoryPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+                @Override
+                public void onPageScrolled(int i, float v, int i2) {
 
-            }
+                }
 
-            @Override
-            public void onPageSelected(int i) {
-                mCurrentIndex = i;
-            }
+                @Override
+                public void onPageSelected(int i) {
+                    mCurrentIndex = i;
+                }
 
-            @Override
-            public void onPageScrollStateChanged(int i) {
+                @Override
+                public void onPageScrollStateChanged(int i) {
 
-            }
-        });
+                }
+            });
+        }
         return parent;
     }
 
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            sStories.clear();
-            sStories.addAll(StoryDatabaseHelper.getInstnace(context).queryStories());
-            mStoryPager.setAdapter(new StoryPagerAdapter(getActivity(), mItemPerPage));
-            mStoryPager.setCurrentItem(mCurrentIndex);
+            reloadStoriesAsync();
         }
     };
 
@@ -102,6 +127,7 @@ public class StoryList extends ThemeChangeFragment {
         private final WeakReference<LayoutInflater> mInflater;
         private final int mItemsInPage;
         private final int mTotalItems;
+        private Handler mHandler = new Handler();
 
         public StoryPagerAdapter(Activity activity, final int itemsInPage) {
             mActivity = new WeakReference<Activity>(activity);
@@ -151,9 +177,22 @@ public class StoryList extends ThemeChangeFragment {
                     final Story story = adapter.getItem(position);
                     StoryContentDialog dialog = StoryContentDialog.getNewInstance(mContext.get(), story);
                     dialog.show(mActivity.get().getFragmentManager(), StoryContentDialog.TAG);
+                    story.setRead(true);
+                    StoryDatabaseHelper.getInstnace(mActivity.get()).setRead(story);
+                    mHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            notifyDataSetChanged();
+                        }
+                    }, 30);
                 }
             });
             return storyList;
+        }
+
+        @Override
+        public int getItemPosition(Object object) {
+            return POSITION_NONE;
         }
 
         private class StoryListAdapter extends BaseAdapter {
@@ -199,17 +238,21 @@ public class StoryList extends ThemeChangeFragment {
                     holder = new ViewHolder();
                     holder.mTitle = (TextView) convertView.findViewById(R.id.title);
                     holder.mSummary = (TextView) convertView.findViewById(R.id.summary);
+                    holder.mHint = (ImageView) convertView.findViewById(R.id.new_hint);
                     convertView.setTag(holder);
                 } else {
                     holder = (ViewHolder) convertView.getTag();
                 }
-                holder.mTitle.setText(getItem(position).getTitle());
-                holder.mSummary.setText(getItem(position).getSummary());
+                final Story story = getItem(position);
+                holder.mTitle.setText(story.getTitle());
+                holder.mSummary.setText(story.getSummary());
+                holder.mHint.setVisibility(story.hasRead() ? View.INVISIBLE : View.VISIBLE);
                 return convertView;
             }
 
             private class ViewHolder {
                 TextView mTitle, mSummary;
+                ImageView mHint;
             }
         }
     }
