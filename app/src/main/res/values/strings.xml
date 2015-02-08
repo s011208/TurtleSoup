@@ -8,4 +8,7 @@
     <string name="turtle_soup">海龜湯</string>
     <string name="settings">設定</string>
     <string name="instructions">說明</string>
+
+    <string name="show_answer">顯示答案</string>
+    <string name="hide_answer">隱藏答案</string>
 </resources>
