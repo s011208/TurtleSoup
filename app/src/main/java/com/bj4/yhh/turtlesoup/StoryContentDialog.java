@@ -40,9 +40,21 @@ public class StoryContentDialog extends DialogFragment {
         TextView content = (TextView) parent.findViewById(R.id.content);
         final TextView showAnswer = (TextView) parent.findViewById(R.id.show_answer);
         final TextView answer = (TextView) parent.findViewById(R.id.answer);
-        title.setText(story.getTitle());
-        content.setText(story.getContent());
-        answer.setText(story.getAnswer());
+        final String storyTitle = story.getTitle();
+        if (storyTitle != null) {
+            title.setText(storyTitle);
+        }
+        final String storyContent = story.getContent();
+        if (storyContent != null) {
+            content.setText(storyContent);
+        }
+        final String storyAnswer = story.getAnswer();
+        if (storyAnswer != null) {
+            answer.setText(storyAnswer);
+        } else {
+            showAnswer.setVisibility(View.GONE);
+            answer.setVisibility(View.GONE);
+        }
         showAnswer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

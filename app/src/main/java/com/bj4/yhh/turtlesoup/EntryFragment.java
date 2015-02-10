@@ -41,8 +41,8 @@ public class EntryFragment extends ThemeChangeFragment {
                         ((MainActivity) getActivity()).switchToStoryFragment();
                         break;
                     case 1:
-                        break;
-                    case 2:
+                        StoryContentDialog dialog = StoryContentDialog.getNewInstance(getActivity(), new Story(getActivity().getString(R.string.instruction), null, getActivity().getString(R.string.instruction_content), null));
+                        dialog.show(getActivity().getFragmentManager(), StoryContentDialog.TAG);
                         break;
                 }
             }
@@ -66,7 +66,6 @@ public class EntryFragment extends ThemeChangeFragment {
             final Resources res = mContext.get().getResources();
             mItems.add(res.getString(R.string.turtle_soup));
             mItems.add(res.getString(R.string.instructions));
-            mItems.add(res.getString(R.string.settings));
         }
 
         @Override

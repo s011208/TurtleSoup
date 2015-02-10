@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:versionCode="3"
+    android:versionName="201502101"
     package="com.bj4.yhh.turtlesoup">
 
     <uses-sdk android:minSdkVersion="14"></uses-sdk>
