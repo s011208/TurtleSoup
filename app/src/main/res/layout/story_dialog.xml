@@ -15,6 +15,7 @@
         android:shadowRadius="4"
         android:singleLine="true"
         android:textSize="32sp"
+        android:padding="@dimen/story_dialog_title_padding"
         android:layout_height="wrap_content" />
 
     <ScrollView

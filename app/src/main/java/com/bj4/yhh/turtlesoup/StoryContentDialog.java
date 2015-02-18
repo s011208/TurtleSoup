@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
@@ -69,5 +70,20 @@ public class StoryContentDialog extends DialogFragment {
             }
         });
         return parent;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        Dialog dialog = getDialog();
+        if (dialog != null) {
+            final DisplayMetrics metrics = getActivity().getResources().getDisplayMetrics();
+            final int displayH = metrics.heightPixels;
+            final int displayW = metrics.widthPixels;
+            final float density = metrics.density;
+            if (Math.min(displayH, displayW) / density <= 360) {
+                dialog.getWindow().setLayout((int) (displayW * 0.8f), (int) (displayH * 0.8f));
+            }
+        }
     }
 }

@@ -1,3 +1,4 @@
 <resources>
     <integer name="items_paer_page">20</integer>
+    <dimen name="story_dialog_title_padding">0dp</dimen>
 </resources>

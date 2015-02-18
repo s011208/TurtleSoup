@@ -11,4 +11,5 @@
 
     <dimen name="entry_text_size">30sp</dimen>
     <dimen name="entry_text_padding">16dp</dimen>
+    <dimen name="story_dialog_title_padding">3dp</dimen>
 </resources>
